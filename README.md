@@ -1,4 +1,6 @@
-# TreeGeneClimate_WES
+## TreeGeneClimate: Sustainable wood and biomass production: novel traits, resilience to climate change, pests and diseases
+
+# Exome Capture Sequencing
 
 This repository includes scripts used for the analysis of exome capature sequencing:
 
@@ -8,4 +10,4 @@ This repository includes scripts used for the analysis of exome capature sequenc
 4. Coverage metrics
 5. Variant calling with bcftools mpileup and call, filtering, and basic metrics
 
-NOTE: The repository is still under construction
+**NOTE:** The repository is still under construction
