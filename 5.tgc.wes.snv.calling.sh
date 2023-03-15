@@ -116,7 +116,6 @@ bcftools index $VCF_DIR/tgc.wes.call.filtered.snvs.vcf.gz
 bcftools index $VCF_DIR/tgc.wes.call.filt.snvs.noindels.biallelic.mis75.mdp10.maf05.recode.vcf.gz
 bcftools index $VCF_DIR/tgc.wes.call.unfilt.snvs.vcf.gz
 
-
 # First, we set some new variables with new directory and filtered and unfiltered vcf files
 FILT_VCF=$VCF_DIR/tgc.wes.call.filt.snvs.noindels.biallelic.mis75.mdp10.maf05.recode.vcf.gz
 FILT_STATS=$VCF_DIR/STATS/tgc.wes.stats.filtered.snvs
