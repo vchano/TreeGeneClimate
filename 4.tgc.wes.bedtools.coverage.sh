@@ -55,7 +55,6 @@ list='P001_WA02 P001_WA03 P001_WA04 P001_WA05 P001_WA06 P001_WA07 P001_WA08 P001
 for sample in ${list}
 do
 bedtools coverage -hist -abam $INPUT/${sample}_bt2.fix.psrt.dedup.bam -b $REF/Pabies1.0_probe_sites_pilot.bed | grep ^all > $OUTPUT/${sample}_hist.all.txt
-
 cp $OUTPUT/${sample}_hist.all.txt $HOME/TGC_WES/4.TGC.WES.COVERAGE
 
 done
