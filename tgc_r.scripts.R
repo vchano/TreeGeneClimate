@@ -6,8 +6,8 @@
 ###################################################################################################
 
 # This script will generate a figure for the cumulative distribution of coverage for the captured bases by both EC-Seq and TB-Seq
-# Input files are the *.hist files from 'bedtools coverage' (see bash script below) after doing grep'd '^all'  
-# The bash file for running 'bedtools coverage' was $SCRATCH/TGC_WES/0.APPS/4.tgc.wes.bedtools.coverage.sh
+# Input files are the *.hist files from 'bedtools coverage' (see bash script) after doing grep'd '^all'  
+# The bash file for running 'bedtools coverage' can be found at TreeGeneClimate/bash/tgc.bedtools.coverage.sh
 # A tutorial can be found at https://gettinggeneticsdone.blogspot.com/2014/03/visualize-coverage-exome-targeted-ngs-bedtools.html
 
 # FIGURE 1. CUMULATIVE DISTRIBUTION OF COVERAGE DEPTH OF CAPTURED TARGET BASES
@@ -115,7 +115,7 @@ dev.off()
 
 setwd("/home/uni01/UFFF/chano/TGC_WES/4.TGC.WES.COVERAGE/TGC_TBS_COVERAGE")
 print(files.tbs <- list.files(pattern="all.txt$"))
-print(labs.tbs <- c(
+print(labs.tbs <- c( # no sample failed during sequencing
   "CT_1601","CT_1610","CT_1612","CT_1616","CT_1619","CT_1621","CT_1622","CT_1624","CT_1626","CT_1630","CT_1637","CT_2718",
   "CT_2719","CT_2721","CT_2723","CT_2725","CT_2726","CT_2733","CT_2734","CT_2736","CT_2741","CT_3205","CT_3214","CT_3215",
   "CT_3223","CT_3225","CT_3226","CT_3227","CT_3233","CT_3234","CT_3240","CT_3241","CT_3242","CT_3243","CT_3244","CT_3245",
@@ -221,10 +221,10 @@ tbs<-(t(tbs))
 write.table(tbs,file="/home/uni01/UFFF/chano/TGC_WES/MS_SCI_DATA/cov_cumul.tbs.txt",col.names=FALSE,dec=".",sep="\t")
 
 ###################################################################################################
-### CODE CHUNK 2: FILTERING STEPS TO GET THE FINAL SET OF HIGH-QUALITY SNPs                     ###
+### CODE CHUNK 2: FILTERING STEPS TO GET THE FINAL SET OF HIGH-QUALITY SNPs (EC-SEQ)            ###
 ###################################################################################################
 
-# This script will generate six figures for the supplementary material 
+# This script generate six figures about SNP filtering for the supplementary material 
 # Input files are the results from different filtering steps applied in all samples (breeding/clones and candidates/unrelated) after variant calling by using vcftools
 # Filtering steps included keeping only biallelic sites, max missingness per site 20%, min and max depth 9 and 40, quality score > 30, and MAF < 0.01 
 # The initial 91497488 variant sites was reduced to 79293 high-quality SNPs
@@ -236,7 +236,7 @@ write.table(tbs,file="/home/uni01/UFFF/chano/TGC_WES/MS_SCI_DATA/cov_cumul.tbs.t
 
 # FIGURE S1. DENSITIES OF SITE MEAN DEPTH AND MISSINGNESS, SAMPLE MEAN DEPTH AND MISSINGNESS, MAF AND HETEROZYGOSITY
 # 1A-F) 
-
+#@PORAKI
 setwd("/home/uni01/UFFF/chano/TGC_WES/5.SNV.CALLING/TGC.WES.STATS") # new directory with three subfolders for ALL, CLONES and UNRELATED
 library(tidyverse)
 library(gridExtra)
