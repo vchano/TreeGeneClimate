@@ -675,7 +675,239 @@ k9.u = cbind(k9.u, indTable.unrel)
 k10.u=read.table("3.UNRELATED/tgc.wes.unrelated.10.Q")
 k10.u = cbind(k10.u, indTable.unrel)
 
+########################################################################
+### CODE CHUNK 8: METHYLATION EXTRACTOR DATA FROM ALL THE SAMPLES    ###
+########################################################################
 
-# PIE ASI JAM KAU KOS KUO LAI LAM LEP LOP LUO MAN MAR MIE MIK MUL MUU ORI PAL PET PUJ PUN PUU RAU SAV SOM" 
+# This script will load methylation extractor data from all the samples and plot the percentages of methylated cytosines
+
+stats<-read.table("~/TGC/PUBLICATION/TBSEQ.STATS/TGC_methyl_extractor_bismark.txt",header=TRUE,sep="\t",dec=".")
+hist(stats$EFFICIENCY,
+     col="peachpuff",
+     prob = TRUE, # show densities instead of frequencies
+     xlab = "Mapping Efficiency (%)",
+     main = "Bismark Mapping Efficiency",
+     breaks = seq(from=0, to=100, by=2))
+
+lines(density(stats$EFFICIENCY), # density plot
+      lwd = 3, # thickness of line
+      col = "chocolate3")
+stats$NUMBER <- seq.int(nrow(stats))
+
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4a.tbseq.methperc.all.tiff",width=24,height=8,units="in",res=300)
+ggplot(stats, aes(NUMBER)) + 
+  geom_line(aes(y = PERCENT_METHYLATED_CpGs, colour = "Methylated in CpGs context")) + 
+  geom_line(aes(y = PERCENT_METHYLATED_CHGs, colour = "Methylated in CHGs context")) + 
+  geom_line(aes(y = PERCENT_METHYLATED_CHHs, colour = "Methylated in CHHs context")) + 
+  theme_bw() + labs(title = "a)") +
+  ylab("Methylated cytosines (%)") + xlab("Breeding samples                    Open-pollinated samples") +
+  geom_vline(xintercept = 218.5,linetype="dashed")+
+  geom_vline(xintercept = c(11.5,21.5,36.5,51.5,66.5,79.5,94.5,109.5,124.5,139.5,148.5,163.5,178.5,193.5,201.5,208.5,
+                            224.5,254.5,269.5,283.5,305.5,309.5,327.5,360.5,384.5,407.5,409.5,417.5,426.5,477.5,506.5,
+                            521.5,528.5,550.5,559.5,560.5,565.5,590.5,598.5,608.5,614.5),linetype="dotted")+
+  scale_x_continuous(
+    breaks=c( 6,16,28.5,43.5,58.5,72.5,86.5,101.5,116.5,131.5,143.5,155.5,170.5,185.5,197,204.5,213,
+              221,239,261.5,276,294,307,318,343.5,372,395.5,408,415,421.5,
+              451.5,491.5,513.5,524.5,539,551.5,559.5,565.5,577.5,594,603,611,617),
+    labels=c( "6"="16", "16"="27", "28.5"="32", "43.5"="33", "58.5"="38", "72.5"="39", "86.5"="40",
+              "101.5"="41","116.5"="42","131.5"="43","143.5"="44","155.5"="47","170.5"="48","185.5"="50",
+              "197"="51","204.5"="52","213"="53",
+              "221"="Asikkala","239"="Jämsä","261.5"="Kauhajoki","276"="Koski",
+              "294"="Kuopio","307"="Laihia","318"="Lammi","343.5"="Leppävirta",
+              "372"="Loppi","395.5"="Luopioinen","408"="Mäntyharju","415"="Marttila",
+              "421.5"="Miehikkälä","451.5"="Mikkeli","491.5"="Multia","513.5"="Muurame",
+              "524.5"="Orivesi","539"="Pälkäne","551.5"="Petäjävesi","559.5"="Pieksämäen",
+              "565.5"="Punkaharju","577.5"="Punkalaidun","594"="Puumala","603"="Rautalampi",
+              "611"="Savonlinna","617"="Somero")) +
+  scale_color_manual(
+    values = c("Methylated in CpGs context" = "cornflowerblue", "Methylated in CHGs context" = "limegreen", "Methylated in CHHs context" = "firebrick"),  # Define colors
+    breaks = c("Methylated in CpGs context","Methylated in CHGs context","Methylated in CHHs context")) +
+  theme(plot.title = element_text(size=20),
+        axis.title = element_text(size = 15),
+        axis.title.x = element_text(size=15),
+        axis.title.y = element_text(size=15),
+        axis.text.x=element_text(size=12, angle=270, vjust = 0.5, hjust=0),
+        axis.text=element_text(size=15),
+        legend.title=element_blank())
+dev.off()
+
+################################################################################
+### CODE CHUNK 9: LOAD AND INSPECT METHYLATION DATA FROM BREEDING SAMPLES    ###
+################################################################################
+
+# This script will load methylation data from breeding samples using methylKit
+
+library(methylKit)
+setwd("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS")
+
+# To use multithreding and monitor the loading
+library(parallel)
+library(pbapply)
+## Define the number of cores to use
+#num_cores <- 16
+num_cores <- detectCores() - 4
+#rm(num_cores)
+
+# Read deduplicated bam files from bismark alignment (sample list with TBSEQ plates from P001 to P003)
+## Define the file paths and sample IDs
+#clones.list=list(
+file_paths <- c( # Four samples failed during loading, so I filtered them out by commenting. The same for samples_ids and treatments below
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P001_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P002_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P003_WC02_psrt.bam")
+
+# Create methyRawList object with CpGs (breeding samples)
+#cpg.clones.rawlist=processBismarkAln(location=clones.list,sample.id=list(
+sample_ids <- c(
+  "CT_1601","CT_1610","CT_1612","CT_1616","CT_1619","CT_1621","CT_1622","CT_1624","CT_1626","CT_1630","CT_1637","CT_2718",
+  "CT_2719","CT_2721","CT_2723","CT_2725","CT_2726","CT_2733","CT_2734","CT_2736","CT_2741","CT_3205","CT_3214","CT_3215",
+  "CT_3223","CT_3225","CT_3226","CT_3227","CT_3233","CT_3234","CT_3240","CT_3241","CT_3242","CT_3243","CT_3244","CT_3245",
+  "CT_3308","CT_3309","CT_3310","CT_3311","CT_3312","CT_3313","CT_3319","CT_3322","CT_3324","CT_3325","CT_3326","CT_3327",
+  "CT_3328","CT_3331","CT_3338","CT_3803","CT_3804","CT_3805","CT_3808","CT_3809","CT_3810","CT_3812","CT_3815","CT_3817",
+  "CT_3827","CT_3828","CT_3834","CT_3835","CT_3841","CT_3844","CT_3901","CT_3902","CT_3904","CT_3905","CT_3906","CT_3907",
+  "CT_3908","CT_3911","CT_3912","CT_3913","CT_3914","CT_3915","CT_3916","CT_4001","CT_4003","CT_4012","CT_4015","CT_4020",
+  "CT_4024","CT_4032","CT_4034","CT_4040","CT_4041","CT_4043","CT_4047","CT_4049","CT_4050","CT_4051","CT_4104","CT_4105",
+  
+  "CT_4116","CT_4119","CT_4120","CT_4121","CT_4123","CT_4127","CT_4128","CT_4129","CT_4136","CT_4137","CT_4142","CT_4144",
+  "CT_4146","CT_4201","CT_4208","CT_4209","CT_4212","CT_4213","CT_4214","CT_4216","CT_4222","CT_4224","CT_4226","CT_4229",
+  "CT_4230","CT_4234","CT_4238","CT_4243","CT_4301","CT_4306","CT_4308","CT_4310","CT_4311","CT_4312","CT_4315","CT_4321",
+  "CT_4322","CT_4325","CT_4326","CT_4327","CT_4329","CT_4332","CT_4336","CT_4405","CT_4407","CT_4410","CT_4414","CT_4415",
+  "CT_4417","CT_4418","CT_4419","CT_4422","CT_4703","CT_4704","CT_4705","CT_4707","CT_4715","CT_4716","CT_4717","CT_4724",
+  "CT_4725","CT_4731","CT_4735","CT_4738","CT_4741","CT_4743","CT_4748","CT_4802","CT_4803","CT_4805","CT_4818","CT_4819",
+  "CT_4822","CT_4823","CT_4824","CT_4829","CT_4832","CT_4833","CT_4834","CT_4840","CT_4843","CT_4844","CT_5002","CT_5014",
+  "CT_5019","CT_5022","CT_5024","CT_5025","CT_5029","CT_5031","CT_5032","CT_5033","CT_5034","CT_5035","CT_5036","CT_5038",
+  
+  "CT_5041","CT_5126","CT_5127","CT_5128","CT_5129","CT_5130","CT_5131","CT_5133","CT_5142","CT_5209","CT_5216","CT_5218",
+  "CT_5222","CT_5224","CT_5227","CT_5233","CT_5301","CT_5302","CT_5303","CT_5308","CT_5319","CT_5320","CT_5321","CT_5325",
+  "CT_5326","CT_5331")
+
+treatments <-  c(16,16,16,16,16,16,16,16,16,16,16,27,27,27,27,27,27,27,27,27,27,32,32,32,32,32,32,32,32,32,32,32,32,32,32,32,
+                 33,33,33,33,33,33,33,33,33,33,33,33,33,33,33,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,
+                 39,39,39,39,39,39,39,39,39,39,39,39,39,40,40,40,40,40,40,40,40,40,40,40,40,40,40,40,
+                 41,41,41,41,41,41,41,41,41,41,41,41,41,41,41,42,42,42,42,42,42,42,42,42,42,42,42,42,42,42,
+                 43,43,43,43,43,43,43,43,43,43,43,43,43,43,43,44,44,44,44,44,44,44,44,44,
+                 47,47,47,47,47,47,47,47,47,47,47,47,47,47,47,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,
+                 50,50,50,50,50,50,50,50,50,50,50,50,50,50,50,51,51,51,51,51,51,51,51,52,52,52,52,52,52,52,
+                 53,53,53,53,53,53,53,53,53,53)
+
+## Define a function to process each file with progress messages
+process_single_file <- function(file, sample_id, treatment, assembly, read_context, 
+                                mincov, minqual, phred64, nolap, save_context, save_folder) {
+  message(paste("Processing file:", file, "Sample ID:", sample_id, "Treatment:", treatment))
+  result <- processBismarkAln(location = file,
+                              sample.id = sample_id,
+                              assembly = assembly,
+                              read.context = read_context,
+                              treatment = treatments,
+                              mincov = mincov,
+                              minqual = minqual,
+                              phred64 = phred64,
+                              nolap = nolap,
+                              save.context = save_context,
+                              save.folder = save_folder)
+  message(paste("Completed processing file:", file))
+  return(result)
+}
 
 
+# Process the files in parallel using pblapply for CpG context
+cpg_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CpG", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+cpg.clones.rawlist <- methylRawList(cpg_list, treatment=treatments)
+
+# Save the project: environment and history
+save.image("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/.RData")
+savehistory("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/.Rhistory")
+
+# Save the methylRawList object to a file
+saveRDS(cpg.unrel, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/cpg.clones.rawlist.rds")
+
+
+# Check the updated methylation data
+print(cpg.clones.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(cpg.clones.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(cpg.clones.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- cpg.clones.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(cpg.clones.rawlist)) {
+  sample <- cpg.clones.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4b.tbseq.methperc.breeding.tiff",width=12,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "cornflowerblue") +
+  labs(title = "b)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
