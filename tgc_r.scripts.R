@@ -911,3 +911,1406 @@ ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
         plot.title = element_text(size=20))
 dev.off()
 rm(all_samples_df) # To free space
+
+
+## Coverage histogram for possible Supplementary Material (finally not included)
+#getCoverageStats(cpg.clones[[1]],plot=FALSE,both.strands = FALSE)
+#getCoverageStats(cpg.clones[[1]],plot=TRUE,both.strands = FALSE)
+## Initialize an empty data frame to store coverage and sample labels
+#coverage_df <- data.frame(coverage = numeric(), sample = character())
+#
+## Loop through each sample in the methylRawList object
+#for (i in seq_along(cpg.clones)) {
+#  sample <- cpg.clones[[i]] # Extract the coverage data for the current sample
+#  coverage <- sample$coverage # Extract the coverage values
+#  sample_coverage_df <- data.frame(coverage = coverage,sample = paste("Sample", i)) # Create a data frame for the current sample
+#  coverage_df <- rbind(coverage_df, sample_coverage_df) # Combine with the main data frame
+#}
+#
+#tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/def.cpg.coverage.density_plots.a.tiff",width=8,height=8,units="in",res=300)
+## Create the plot using ggplot2 with the same color for all samples and no legend
+#ggplot(coverage_df, aes(x = coverage, group = sample)) +
+#  geom_density(color = "cornflowerblue") +
+#  labs(title = "a) CpG context in breeding samples",
+#       x = "Coverage",
+#       y = "Density") +
+#  theme_minimal()+ xlim(0,50) +
+#  theme(legend.position = "none") +
+#  theme(axis.title = element_text(size = 15),
+#        axis.text=element_text(size=15),  
+#        plot.title = element_text(size=20))
+#dev.off()
+#rm(coverage_df) # Free space
+
+rm(cpg_list)
+rm(cpg.clones.rawlist)
+
+# Process the files in parallel using pblapply for CHG context
+chg_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CHG", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+chg.clones.rawlist <- methylRawList(chg_list, treatment=treatments)
+
+# Save the methylRawList object to a file
+saveRDS(chg.clones.rawlist, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chg.clones.rawlist.rds")
+
+# Check the updated methylation data
+print(chg.clones.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(chg.clones.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(chg.clones.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- chg.clones.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(chg.clones.rawlist)) {
+  sample <- chg.clones.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4c.tbseq.methperc.breeding.tiff",width=8,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "limegreen") +
+  labs(title = "c)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
+
+rm(chg_list)
+rm(chg.clones.rawlist)
+
+# Process the files in parallel using pblapply for CHH context
+chh_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CHH", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+chh.clones.rawlist <- methylRawList(chh_list, treatment=treatments)
+
+# Save the methylRawList object to a file
+saveRDS(chh.clones.rawlist, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chh.clones.rawlist.rds")
+
+# Check the updated methylation data
+print(chh.clones.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(chh.clones.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(chh.clones.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- chh.clones.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(chh.clones.rawlist)) {
+  sample <- chh.clones.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4d.tbseq.methperc.breeding.tiff",width=8,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "firebrick") +
+  labs(title = "d)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
+
+rm(chh_list)
+rm(chh.clones.rawlist)
+
+
+# Save the project: environment and history
+#save.image("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/.RData")
+#savehistory("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/.Rhistory")
+
+
+########################################################################################
+### CODE CHUNK 10: LOAD AND INSPECT METHYLATION DATA FROM OPEN-POLLINATED SAMPLES    ###
+########################################################################################
+
+# This script will load methylation data from breeding samples using methylKit
+
+library(methylKit)
+library(ggplot2)
+setwd("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS")
+
+# To use multiple threads and monitor the loading
+library(parallel)
+library(pbapply)
+## Define the number of cores to use
+num_cores <- detectCores() - 4
+
+# Read deduplicated bam files from bismark alignment (sample list with TBSEQ plates from P004 to P008)
+## Define the file paths and sample IDs
+file_paths <- c( # Four samples failed during loading and are filtered out by commenting. The same for samples_ids and treatments below
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P004_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P005_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA11_psrt.bam",#"/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC10_psrt.bam",#"/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC11_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P006_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA01_psrt.bam",#"/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA02_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA05_psrt.bam",#"/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WB12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WC12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WD12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WE12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WF12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WG12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH02_psrt.bam",#"/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH03_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P007_WH12_psrt.bam",
+  
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA06_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA07_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA08_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA09_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA10_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA11_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WA12_psrt.bam",
+  "/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB01_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB02_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB03_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB04_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB05_psrt.bam","/home/uni01/UFFF/chano/TGC_TBS/3.MAPPING/BISMARK/P008_WB06_psrt.bam")
+
+sample_ids <- c(
+  "UT_0001","UT_0002","UT_0003","UT_0004","UT_0005","UT_0006","UT_0007","UT_0008","UT_0009","UT_0010","UT_0011","UT_0012",
+  "UT_0013","UT_0014","UT_0015","UT_0016","UT_0017","UT_0018","UT_0019","UT_0020","UT_0021","UT_0022","UT_0023","UT_0024",
+  "UT_0025","UT_0026","UT_0027","UT_0028","UT_0029","UT_0030","UT_0031","UT_0032","UT_0033","UT_0034","UT_0035","UT_0036",
+  "UT_0037","UT_0038","UT_0039","UT_0040","UT_0041","UT_0042","UT_0043","UT_0044","UT_0045","UT_0046","UT_0047","UT_0048",
+  "UT_0049","UT_0050","UT_0051","UT_0052","UT_0053","UT_0054","UT_0055","UT_0056","UT_0057","UT_0058","UT_0059","UT_0060",
+  "UT_0061","UT_0062","UT_0063","UT_0064","UT_0065","UT_0066","UT_0067","UT_0068","UT_0069","UT_0070","UT_0071","UT_0072",
+  "UT_0073","UT_0074","UT_0075","UT_0076","UT_0077","UT_0078","UT_0079","UT_0080","UT_0081","UT_0082","UT_0083","UT_0084",
+  "UT_0085","UT_0086","UT_0087","UT_0088","UT_0089","UT_0090","UT_0091","UT_0092","UT_0093","UT_0094","UT_0095","UT_0096",
+  
+  "UT_0097","UT_0098","UT_0099","UT_0100","UT_0101","UT_0102","UT_0103","UT_0104","UT_0105","UT_0106","UT_0107","UT_0108",
+  "UT_0109","UT_0110","UT_0111","UT_0112","UT_0113","UT_0114","UT_0115","UT_0116","UT_0117","UT_0118","UT_0119","UT_0120",
+  "UT_0121","UT_0122","UT_0123","UT_0124","UT_0125","UT_0126","UT_0127","UT_0128","UT_0129","UT_0130","UT_0131","UT_0132",
+  "UT_0133","UT_0134","UT_0135","UT_0136","UT_0137","UT_0138","UT_0139","UT_0140","UT_0141","UT_0142","UT_0143","UT_0144",
+  "UT_0145","UT_0146","UT_0147","UT_0148","UT_0149","UT_0150","UT_0151","UT_0152","UT_0153","UT_0154","UT_0155","UT_0156",
+  "UT_0157","UT_0158","UT_0159","UT_0160","UT_0161","UT_0162","UT_0163","UT_0164","UT_0165","UT_0166","UT_0167","UT_0168",
+  "UT_0169","UT_0170","UT_0171","UT_0172","UT_0173","UT_0174","UT_0175","UT_0176","UT_0177","UT_0178","UT_0179","UT_0180",
+  "UT_0181","UT_0182","UT_0183","UT_0184","UT_0185","UT_0186","UT_0187","UT_0188","UT_0189","UT_0190","UT_0191","UT_0192",#192
+  
+  "UT_0193","UT_0194","UT_0195","UT_0196","UT_0197","UT_0198","UT_0199","UT_0200","UT_0201","UT_0202","UT_0203",##"UT_0204",
+  "UT_0205","UT_0206","UT_0207","UT_0208","UT_0209","UT_0210","UT_0211","UT_0212","UT_0213","UT_0214","UT_0215","UT_0216",
+  "UT_0217","UT_0218","UT_0219","UT_0220","UT_0221","UT_0222","UT_0223","UT_0224","UT_0225","UT_0226",#"UT_0227",
+  "UT_0228",
+  "UT_0229","UT_0230","UT_0231","UT_0232","UT_0233","UT_0234","UT_0235","UT_0236","UT_0237","UT_0238","UT_0239","UT_0240",
+  "UT_0241","UT_0242","UT_0243","UT_0244","UT_0245","UT_0246","UT_0247","UT_0248","UT_0249","UT_0250","UT_0251","UT_0252",
+  "UT_0253","UT_0254","UT_0255","UT_0256","UT_0257","UT_0258","UT_0259","UT_0260","UT_0261","UT_0262","UT_0263","UT_0264",
+  "UT_0265","UT_0266","UT_0267","UT_0268","UT_0269","UT_0270","UT_0271","UT_0272","UT_0273","UT_0274","UT_0275","UT_0276",
+  "UT_0277","UT_0278","UT_0279","UT_0280","UT_0281","UT_0282","UT_0283","UT_0284","UT_0285","UT_0286","UT_0287","UT_0288",#286
+  
+  "UT_0289",#"UT_0290",
+  "UT_0291","UT_0292","UT_0293",##"UT_0294", this samples has just few reads and all the Cs are unmethylated
+  "UT_0295","UT_0296","UT_0297","UT_0298","UT_0299","UT_0300",
+  "UT_0301","UT_0302","UT_0303","UT_0304","UT_0305","UT_0306","UT_0307","UT_0308","UT_0309","UT_0310","UT_0311","UT_0312",
+  "UT_0313","UT_0314","UT_0315","UT_0316","UT_0317","UT_0318","UT_0319","UT_0320","UT_0321","UT_0322","UT_0323","UT_0324",
+  "UT_0325","UT_0326","UT_0327","UT_0328","UT_0329","UT_0330","UT_0331","UT_0332","UT_0333","UT_0334","UT_0335","UT_0336",
+  "UT_0337","UT_0338","UT_0339","UT_0340","UT_0341","UT_0342","UT_0343","UT_0344","UT_0345","UT_0346","UT_0347","UT_0348",
+  "UT_0349","UT_0350","UT_0351","UT_0352","UT_0353","UT_0354","UT_0355","UT_0356","UT_0357","UT_0358","UT_0359","UT_0360",
+  "UT_0361","UT_0362","UT_0363","UT_0364","UT_0365","UT_0366","UT_0367","UT_0368","UT_0369","UT_0370","UT_0371","UT_0372",
+  "UT_0373","UT_0374",#"UT_0375",
+  "UT_0376","UT_0377","UT_0378","UT_0379","UT_0380","UT_0381","UT_0382","UT_0383","UT_0384",
+  
+  "UT_0385","UT_0386","UT_0387","UT_0388","UT_0389","UT_0390","UT_0391","UT_0392","UT_0393","UT_0394","UT_0395","UT_0396",
+  "UT_0397","UT_0398","UT_0399","UT_0400","UT_0401","UT_0402")
+
+treatments<-c( 20,19,19,19,19,19,19,19,19,19,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+               15,15,15,15,15,15,15,15,15,15,15,15,15,15,15, 6, 6, 6, 6, 3, 3, 3, 3, 3,
+               3, 3, 3, 3, 3, 3, 3, 3, 3, 3,13,13,13,13,11,11,14,14,14,14,14,14,14,14,
+               14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
+               
+               14,14,24,24,24,24,24,24,24,24,24,24,8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 
+               8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,8, 8, 8, 8, 8, 8, 8,14,14,14,14,14,
+               14,14,14,14,14,14,14,14,14,14,14,14,13,13,13,13,13,10,10,10,10,10,10,10,
+               10,10,10,10,10,10,10,10, 7, 7, 7, 7,7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+               
+               7, 7,23,23,23,23,23,23,23,23, 8,# 8,
+               9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9,9, 9, 9, 9, 9, 9, 9, 9, 9, 9,# 9,
+               9,5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 2, 2, 
+               2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 
+               2, 2, 2, 2,12,12,12,12,12,12,12,12,
+               
+               18,#18,
+               18,18,18,#18,
+               18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,18,10,10,
+               10,10,10,10,10,10,22,22,22,22,22,22,22,22,22,22,26,26,26,26,26,26,25,25,
+               25,25,25,25,21,21,21,21,21, 1, 1, 1,1, 1, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+               4, 4, 4, 4, 4,22,22,22,22,22,22,22,22,22,#22,
+               22,22,22,22,22,16,16,16,16,
+               
+               16,16,16,16,16,16,16,16,16,16,16,17,17,17,17,17,17,17)
+
+## Define a function to process each file with progress messages
+process_single_file <- function(file, sample_id, treatment, assembly, read_context, mincov, minqual, phred64, nolap, save_context, save_folder) {
+  message(paste("Processing file:", file, "Sample ID:", sample_id, "Treatment:", treatment))
+  result <- processBismarkAln(location = file,sample.id = sample_id,assembly = assembly,
+                              read.context = read_context,treatment = treatments,
+                              mincov = mincov,minqual = minqual,phred64 = phred64,
+                              nolap = nolap,save.context = save_context,save.folder = save_folder)
+  message(paste("Completed processing file:", file))
+  return(result)
+}
+
+# Process the files in parallel using pblapply
+cpg_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CpG", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+cpg.unrel.rawlist <- methylRawList(cpg_list, treatment=treatments)
+
+# Save the methylRawList object to a file
+saveRDS(cpg.unrel.rawlist, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/cpg.unrel.rawlist.rds")
+
+# Check the updated methylation data
+print(cpg.unrel.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(cpg.unrel.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(cpg.unrel.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- cpg.unrel.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "coral", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(cpg.unrel.rawlist)) {
+  sample <- cpg.unrel.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4e.tbseq.methperc.candidates.tiff",width=8,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "cornflowerblue") +
+  labs(title = "e)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
+
+## Coverage histogram for possible Supplementary Material (finally not included)
+#getCoverageStats(cpg.unrel.rawlist[[1]],plot=FALSE,both.strands = FALSE)
+#getCoverageStats(cpg.unrel.rawlist[[1]],plot=TRUE,both.strands = FALSE)
+## Initialize an empty data frame to store coverage and sample labels
+#coverage_df <- data.frame(coverage = numeric(), sample = character())
+#
+## Loop through each sample in the methylRawList object
+#for (i in seq_along(cpg.unrel.rawlist)) {
+#  sample <- cpg.unrel.rawlist[[i]] # Extract the coverage data for the current sample
+#  coverage <- sample$coverage # Extract the coverage values
+#  sample_coverage_df <- data.frame(coverage = coverage,sample = paste("Sample", i)) # Create a data frame for the current sample
+#  coverage_df <- rbind(coverage_df, sample_coverage_df) # Combine with the main data frame
+#}
+#
+#tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/def.cpg.coverage.density_plots.b.tiff",width=8,height=8,units="in",res=300)
+## Create the plot using ggplot2 with the same color for all samples and no legend
+#ggplot(coverage_df, aes(x = coverage, group = sample)) +
+#  geom_density(color = "coral") +
+#  labs(title = "b) CpG context in open-pollinated samples",
+#       x = "Coverage",
+#       y = "Density") +
+#  theme_minimal()+ xlim(0,50) +
+#  theme(legend.position = "none") +
+#  theme(axis.title = element_text(size = 15),
+#        axis.text=element_text(size=15),  
+#        plot.title = element_text(size=20))
+#dev.off()
+#rm(coverage_df) # Free space
+
+rm(cpg_list)
+rm(cpg.unrel.rawlist)
+
+# Process the files in parallel using pblapply for CHG context
+chg_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CHG", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+chg.unrel.rawlist <- methylRawList(chg_list, treatment=treatments)
+
+# Save the methylRawList object to a file
+saveRDS(chg.unrel.rawlist, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chg.unrel.rawlist.rds")
+
+# Check the updated methylation data
+print(chg.unrel.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(chg.unrel.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(chg.unrel.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- chg.unrel.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(chg.unrel.rawlist)) {
+  sample <- chg.unrel.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4f.tbseq.methperc.candidates.tiff",width=8,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "limegreen") +
+  labs(title = "f)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
+
+rm(chg_list)
+rm(chg.unrel.rawlist)
+
+# Process the files in parallel using pblapply for CHH context
+chh_list <- pblapply(seq_along(file_paths), function(i) {
+  process_single_file(file_paths[i], sample_ids[i], treatments[i], "Pabies01", "CHH", 1, 5, FALSE, FALSE, NULL, getwd())
+}, cl = num_cores)
+
+# Combine the results into a methylRawList object
+chh.unrel.rawlist <- methylRawList(chh_list, treatment=treatments)
+
+# Save the methylRawList object to a file
+saveRDS(chh.unrel.rawlist, file = "/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chh.unrel.rawlist.rds")
+
+# Check the updated methylation data
+print(chh.unrel.rawlist)
+
+# Example of bimodal Histogram of % methylation per sample (CpG context)
+getMethylationStats(chh.unrel.rawlist[[1]],plot=FALSE, both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 1
+getMethylationStats(chh.unrel.rawlist[[2]],plot=TRUE , both.strands = FALSE, labels=TRUE) # Plot percent methylation statistics for sample 2
+
+## Ploting bimodal distribution of methylated Cs for all the samples (CpG context)
+# Extract the methylation data for sample 1
+sample1 <- chh.unrel.rawlist[[1]]
+
+# Calculate the methylation percentages
+methylation_percentages <- (sample1$numCs / (sample1$numCs + sample1$numTs)) * 100
+
+# Create a density plot using ggplot2
+df <- data.frame(methylation_percentages)
+ggplot(df, aes(x = methylation_percentages)) +
+  geom_density(colour = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Methylation Percentages for Sample 1",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()
+
+# Initialize an empty data frame to store methylation percentages and sample labels
+all_samples_df <- data.frame(methylation_percentages = numeric(), sample = character())
+
+# Loop through each sample in the methylRawList object
+for (i in seq_along(chh.unrel.rawlist)) {
+  sample <- chh.unrel.rawlist[[i]] # Extract the methylation data for the current sample
+  methylation_percentages <- (sample$numCs / (sample$numCs + sample$numTs)) * 100 # Calculate the methylation percentages
+  sample_df <- data.frame(methylation_percentages = methylation_percentages,sample = paste("Sample", i)) # Create a data frame for the current sample
+  all_samples_df <- rbind(all_samples_df, sample_df) # Combine with the main data frame
+}
+
+# Save the graph to a file
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure4g.tbseq.methperc.candidates.tiff",width=8,height=8,units="in",res=300)
+# Create a density plot using ggplot2 with different colors for each sample
+ggplot(all_samples_df, aes(x = methylation_percentages, group = sample)) +
+  geom_density(color = "firebrick") +
+  labs(title = "g)",
+       x = "Methylation Percentage",
+       y = "Density") +
+  theme_minimal()+
+  theme(legend.position = "none") +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20))
+dev.off()
+rm(all_samples_df) # To free space
+
+rm(chh_list)
+rm(chh.unrel.rawlist)
+
+
+
+######################################################################################################
+### CODE CHUNK 11: PCA AND CLUTERING ANALYSIS of CPG SITES FROM BREEDING AND CANDIDATE SAMPLES     ###
+######################################################################################################
+
+# This script will load cpg, chg and chh objects from breeding and candidate samples to perform PCA, clustering and plotting
+
+library(ggplot2)
+library(methylKit)
+library(ggdendro)
+
+##############################################################################################################################
+# CpG BREEDING
+cpg.clones.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/cpg.clones.rawlist.rds")
+
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+cpg.clones.MthBase<-unite(cpg.clones.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(cpg.clones.MthBase)
+
+#methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+cpg.clones.DiffMth<-calculateDiffMeth(cpg.clones.MthBase,adjust="qvalue") 
+cpg.clones.data<-getData(cpg.clones.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(cpg.clones.DiffMth)
+class(cpg.clones.data)
+dim(cpg.clones.data)
+# Create a new column with log2 fold change
+cpg.clones.data$logFC <- log2(cpg.clones.data$meth.diff)
+# Create a new column with -log10(pvalue)
+cpg.clones.data$logP <- -log10(cpg.clones.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+cpg.clones.data2<-cpg.clones.data
+library(stringr)
+cpg.clones.data2$chr <- as.numeric(str_remove(cpg.clones.data2$chr, "MA_"))
+cpg.clones.data2
+write.table(cpg.clones.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(cpg.clones.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(cpg.clones.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(cpg.clones.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  "1" =  "Fam_16","2"="Fam_27","3"="Fam_32","4"="Fam_33",
+  "5" =  "Fam_38","6"="Fam_39","7" ="Fam_40","8"="Fam_41",
+  "9" =  "Fam_42","10"="Fam_43","11"="Fam_44","12"="Fam_47",
+  "13" = "Fam_48","14"="Fam_50","15"="Fam_51","16"="Fam_52",
+  "17" = "Fam_53")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+# Define a vector of colors for the treatments
+treatment_colors <- c("Fam_16"="dodgerblue2","Fam_27"="#E31A1C","Fam_32"="green4","Fam_33"="#6A3D9A","Fam_38"="#FF7F00","Fam_39"="black",      
+                      "Fam_40"="gold1","Fam_41"="skyblue2","Fam_42"="#FB9A99","Fam_43"="palegreen2","Fam_44"="gray70","Fam_47"="khaki2",
+                      "Fam_48"="orchid1","Fam_50"="deeppink1","Fam_51"="blue1","Fam_52"="steelblue4","Fam_53"="darkturquoise")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure.5a.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("a)") + theme_light() + 
+  #xlim(-100, 800) +  # Set x-axis limits
+  #ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "a)",
+    x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+    y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Family", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12)
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.clones.MthBase is your methylBaseDB object
+hc <- clusterSamples(cpg.clones.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(cpg.clones.MthBase@treatment[match(original_labels, cpg.clones.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure.5b.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "b)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+##############################################################################################################################
+# CpG CANDIDATES
+cpg.unrel.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/cpg.unrel.rawlist.rds")
+
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+cpg.unrel.MthBase<-unite(cpg.unrel.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(cpg.unrel.MthBase)
+
+#methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+cpg.unrel.DiffMth<-calculateDiffMeth(cpg.unrel.MthBase,adjust="qvalue") 
+cpg.unrel.data<-getData(cpg.unrel.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(cpg.unrel.DiffMth)
+class(cpg.unrel.data)
+dim(cpg.unrel.data)
+# Create a new column with log2 fold change
+cpg.unrel.data$logFC <- log2(cpg.unrel.data$meth.diff)
+# Create a new column with -log10(pvalue)
+cpg.unrel.data$logP <- -log10(cpg.unrel.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+cpg.unrel.data2<-cpg.unrel.data
+library(stringr)
+cpg.unrel.data2$chr <- as.numeric(str_remove(cpg.unrel.data2$chr, "MA_"))
+cpg.unrel.data2
+write.table(cpg.unrel.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(cpg.unrel.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(cpg.unrel.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(cpg.unrel.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  "1" =  "Fam_16","2"="Fam_27","3"="Fam_32","4"="Fam_33",
+  "5" =  "Fam_38","6"="Fam_39","7" ="Fam_40","8"="Fam_41",
+  "9" =  "Fam_42","10"="Fam_43","11"="Fam_44","12"="Fam_47",
+  "13" = "Fam_48","14"="Fam_50","15"="Fam_51","16"="Fam_52",
+  "17" = "Fam_53")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+# Define a vector of colors for the treatments
+treatment_colors <- c("Fam_16"="dodgerblue2","Fam_27"="#E31A1C","Fam_32"="green4","Fam_33"="#6A3D9A","Fam_38"="#FF7F00","Fam_39"="black",      
+                      "Fam_40"="gold1","Fam_41"="skyblue2","Fam_42"="#FB9A99","Fam_43"="palegreen2","Fam_44"="gray70","Fam_47"="khaki2",
+                      "Fam_48"="orchid1","Fam_50"="deeppink1","Fam_51"="blue1","Fam_52"="steelblue4","Fam_53"="darkturquoise")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure.5c.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("c)") + theme_light() + 
+  #xlim(-100, 800) +  # Set x-axis limits
+  #ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "a)",
+    x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+    y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Family", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12)
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.unrel.MthBase is your methylBaseDB object
+hc <- clusterSamples(cpg.unrel.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(cpg.unrel.MthBase@treatment[match(original_labels, cpg.unrel.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/figure.5d.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "f)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+##############################################################################################################################
+# CHG BREEDING
+chg.clones.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chg.clones.rawlist.rds")
+
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+chg.clones.MthBase<-unite(chg.clones.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(chg.clones.MthBase)
+
+#methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+chg.clones.DiffMth<-calculateDiffMeth(chg.clones.MthBase,adjust="qvalue") 
+chg.clones.data<-getData(chg.clones.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(chg.clones.DiffMth)
+class(chg.clones.data)
+dim(chg.clones.data)
+# Create a new column with log2 fold change
+chg.clones.data$logFC <- log2(chg.clones.data$meth.diff)
+# Create a new column with -log10(pvalue)
+chg.clones.data$logP <- -log10(chg.clones.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+chg.clones.data2<-chg.clones.data
+library(stringr)
+chg.clones.data2$chr <- as.numeric(str_remove(chg.clones.data2$chr, "MA_"))
+chg.clones.data2
+write.table(chg.clones.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(chg.clones.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(chg.clones.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(chg.clones.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  "1" =  "Fam_16","2"="Fam_27","3"="Fam_32","4"="Fam_33",
+  "5" =  "Fam_38","6"="Fam_39","7" ="Fam_40","8"="Fam_41",
+  "9" =  "Fam_42","10"="Fam_43","11"="Fam_44","12"="Fam_47",
+  "13" = "Fam_48","14"="Fam_50","15"="Fam_51","16"="Fam_52",
+  "17" = "Fam_53")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+# Define a vector of colors for the treatments
+treatment_colors <- c("Fam_16"="dodgerblue2","Fam_27"="#E31A1C","Fam_32"="green4","Fam_33"="#6A3D9A","Fam_38"="#FF7F00","Fam_39"="black",      
+                      "Fam_40"="gold1","Fam_41"="skyblue2","Fam_42"="#FB9A99","Fam_43"="palegreen2","Fam_44"="gray70","Fam_47"="khaki2",
+                      "Fam_48"="orchid1","Fam_50"="deeppink1","Fam_51"="blue1","Fam_52"="steelblue4","Fam_53"="darkturquoise")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4a.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("a)") + theme_light() + 
+  #xlim(-100, 800) +  # Set x-axis limits
+  #ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "a)",
+       x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+       y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Family", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12)
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.clones.MthBase is your methylBaseDB object
+hc <- clusterSamples(chg.clones.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(chg.clones.MthBase@treatment[match(original_labels, chg.clones.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4b.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "b)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+
+##############################################################################################################################
+# CHH BREEDING
+
+library(methylKit)
+library(ggplot2)
+# chh BREEDING
+chh.clones.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chh.clones.rawlist.rds")
+
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+chh.clones.MthBase<-unite(chh.clones.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(chh.clones.MthBase)
+
+#methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+chh.clones.DiffMth<-calculateDiffMeth(chh.clones.MthBase,adjust="qvalue") 
+chh.clones.data<-getData(chh.clones.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(chh.clones.DiffMth)
+class(chh.clones.data)
+dim(chh.clones.data)
+# Create a new column with log2 fold change
+chh.clones.data$logFC <- log2(chh.clones.data$meth.diff)
+# Create a new column with -log10(pvalue)
+chh.clones.data$logP <- -log10(chh.clones.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+chh.clones.data2<-chh.clones.data
+library(stringr)
+chh.clones.data2$chr <- as.numeric(str_remove(chh.clones.data2$chr, "MA_"))
+chh.clones.data2
+write.table(chh.clones.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(chh.clones.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(chh.clones.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(chh.clones.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  "1" =  "Fam_16","2"="Fam_27","3"="Fam_32","4"="Fam_33",
+  "5" =  "Fam_38","6"="Fam_39","7" ="Fam_40","8"="Fam_41",
+  "9" =  "Fam_42","10"="Fam_43","11"="Fam_44","12"="Fam_47",
+  "13" = "Fam_48","14"="Fam_50","15"="Fam_51","16"="Fam_52",
+  "17" = "Fam_53")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+# Define a vector of colors for the treatments
+treatment_colors <- c("Fam_16"="dodgerblue2","Fam_27"="#E31A1C","Fam_32"="green4","Fam_33"="#6A3D9A","Fam_38"="#FF7F00","Fam_39"="black",      
+                      "Fam_40"="gold1","Fam_41"="skyblue2","Fam_42"="#FB9A99","Fam_43"="palegreen2","Fam_44"="gray70","Fam_47"="khaki2",
+                      "Fam_48"="orchid1","Fam_50"="deeppink1","Fam_51"="blue1","Fam_52"="steelblue4","Fam_53"="darkturquoise")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.c.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("c)") + theme_light() + 
+  #xlim(-100, 800) +  # Set x-axis limits
+  #ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "a)",
+    x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+    y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Family", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12)
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.clones.MthBase is your methylBaseDB object
+hc <- clusterSamples(chh.clones.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(chh.clones.MthBase@treatment[match(original_labels, chh.clones.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4d.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "d)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+##############################################################################################################################
+# CHG CANDIDATES
+chg.unrel.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chg.unrel.rawlist.rds")
+
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+chg.unrel.MthBase<-unite(chg.unrel.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(chg.unrel.MthBase)
+
+#methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+chg.unrel.DiffMth<-calculateDiffMeth(chg.unrel.MthBase,adjust="qvalue") 
+chg.unrel.data<-getData(chg.unrel.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(chg.unrel.DiffMth)
+class(chg.unrel.data)
+dim(chg.unrel.data)
+# Create a new column with log2 fold change
+chg.unrel.data$logFC <- log2(chg.unrel.data$meth.diff)
+# Create a new column with -log10(pvalue)
+chg.unrel.data$logP <- -log10(chg.unrel.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+chg.unrel.data2<-chg.unrel.data
+library(stringr)
+chg.unrel.data2$chr <- as.numeric(str_remove(chg.unrel.data2$chr, "MA_"))
+chg.unrel.data2
+write.table(chg.unrel.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(chg.unrel.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(chg.unrel.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(chg.unrel.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  "1" =  "Fam_16","2"="Fam_27","3"="Fam_32","4"="Fam_33",
+  "5" =  "Fam_38","6"="Fam_39","7" ="Fam_40","8"="Fam_41",
+  "9" =  "Fam_42","10"="Fam_43","11"="Fam_44","12"="Fam_47",
+  "13" = "Fam_48","14"="Fam_50","15"="Fam_51","16"="Fam_52",
+  "17" = "Fam_53")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+# Define a vector of colors for the treatments
+treatment_colors <- c("Fam_16"="dodgerblue2","Fam_27"="#E31A1C","Fam_32"="green4","Fam_33"="#6A3D9A","Fam_38"="#FF7F00","Fam_39"="black",      
+                      "Fam_40"="gold1","Fam_41"="skyblue2","Fam_42"="#FB9A99","Fam_43"="palegreen2","Fam_44"="gray70","Fam_47"="khaki2",
+                      "Fam_48"="orchid1","Fam_50"="deeppink1","Fam_51"="blue1","Fam_52"="steelblue4","Fam_53"="darkturquoise")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4e.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("e)") + theme_light() + 
+  #xlim(-100, 800) +  # Set x-axis limits
+  #ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "a)",
+    x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+    y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Family", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12)
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.unrel.MthBase is your methylBaseDB object
+hc <- clusterSamples(chg.unrel.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(chg.unrel.MthBase@treatment[match(original_labels, chg.unrel.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4f.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "f)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+
+##############################################################################################################################
+# CHH CANDIDATES
+chh.unrel.rawlist<-readRDS("/home/uni01/UFFF/chano/TGC/PUBLICATION/TBSEQ.STATS/chh.unrel.rawlist.rds")
+#methylBaseDB OBJECT, A SINGLE TABLE FROM methylRawList
+chh.unrel.MthBase <-unite(chh.unrel.rawlist, min.per.group = NULL,mc.cores = num_cores, save.db = TRUE) 
+# Check the structure of the methylBaseDB object
+show(chh.unrel.MthBase)
+
+chh.unrel.DiffMth<-calculateDiffMeth(chh.unrel.MthBase,adjust="qvalue") #methylDiffDB OBJECT, STATS FROM DIFFERENTIAL METHYLATION ANALYSIS
+chh.unrel.data<-getData(chh.unrel.DiffMth) # getting data from differential methylation analysis in a data.frame object
+class(chh.unrel.DiffMth)
+class(chh.unrel.data)
+dim(chh.unrel.data)
+# Create a new column with log2 fold change
+chh.unrel.data$logFC <- log2(chh.unrel.data$meth.diff)
+# Create a new column with -log10(pvalue)
+chh.unrel.data$logP <- -log10(chh.unrel.data$pvalue)
+# Remove "MA_" from chr column and convert to numeric
+chh.unrel.data2<-chh.unrel.data
+library(stringr)
+chh.unrel.data2$chr <- as.numeric(str_remove(chh.unrel.data2$chr, "MA_"))
+chh.unrel.data2
+write.table(chh.unrel.data,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data.txt",col.names=FALSE,dec=".",sep="\t")
+write.table(chh.unrel.data2,file="/home/uni01/UFFF/chano/TGC/PUBLICATION/chh.unrel.data2.txt",col.names=FALSE,dec=".",sep="\t")
+
+
+# create new column "name" by pasting values of "chr" and "start"
+chh.unrel.data2$name <- paste(chh.unrel.data2$chr, data$start, sep = "_")
+
+
+
+# Perform PCA using PCASamples
+pca_result <- PCASamples(chh.unrel.MthBase, obj.return = TRUE)
+
+# Extract PCA scores
+pca_scores <- as.data.frame(pca_result$x)
+
+# Add sample labels
+pca_scores$sample <- rownames(pca_scores)
+
+# Extract treatment information from the original methylRawList object
+# Assuming the treatment information is stored in the 'treatment' attribute
+treatment_info <- attr(chh.unrel.rawlist, "treatment")
+
+# Create a named vector to map original treatment labels to new names
+# Example: if original treatments are 1, 2, 3, ..., 17
+new_treatment_names <- c(
+  
+  "1" ="Asikkala","2" ="Jämsä","3" ="Kauhajoki","4" ="Koski",
+  "5" ="Kuopio","6" ="Laihia","7" ="Lammi","8" ="Leppävirta",
+  "9" ="Loppi","10"="Luopioinen","11"="Mäntyharju","12"="Marttila",
+  "13"="Miehikkälä","14"="Mikkeli","15"="Multia","16"="Muurame",
+  "17"="Orivesi","18"="Pälkäne","19"="Petäjävesi","20"="Pieksänmaa",
+  "21"="Punkaharju","22"="Punkalaidun","23"="Puumala","24"="Rautalampi",
+  "25"="Savonlinna","26"="Somero")
+# Update the treatment_info vector with new names
+treatment_info <- new_treatment_names[as.character(treatment_info)]
+
+# Ensure the treatment information matches the samples in the PCA scores
+# Assuming the samples are in the same order
+pca_scores$treatment <- factor(treatment_info)
+c25 <- c("Asikkala"="dodgerblue2","Jämsä"="#E31A1C","Kauhajoki"="green4",
+         "Koski"="#6A3D9A","Kuopio" ="#FF7F00","Laihia" ="black",
+         "Lammi"="gold1","Leppävirta"="skyblue2","Loppi"="#FB9A99",
+         "Luopioinen"="palegreen2","Mäntyharju"="#CAB2D6",
+         "Marttila"="#FDBF6F","Miehikkälä"="gray80","Mikkeli"="khaki2",
+         "Multia"="maroon","Muurame"="orchid1","Orivesi"="deeppink1",
+         "Pälkäne"="blue1","Petäjävesi"="steelblue4","Pieksänmaa"="darkturquoise",
+         "Punkaharju"="green1","Punkalaidun"="yellow4","Puumala"="yellow3",
+         "Rautalampi"="darkorange4","Savonlinna"="brown","Somero"="grey40")  
+pie(rep(1, 26), col = c25)
+
+# Define a vector of colors for the treatments
+treatment_colors <- c("Asikkala"  ="dodgerblue2",
+                      "Jämsä"  ="#E31A1C", 
+                      "Kauhajoki"  ="green4", 
+                      "Koski"  ="#6A3D9A", 
+                      "Kuopio"  ="#FF7F00", 
+                      "Laihia"  ="black", 
+                      "Lammi"  ="gold1", 
+                      "Leppävirta"  ="skyblue2", 
+                      "Loppi"  ="#FB9A99", 
+                      "Luopioinen"  ="palegreen2", 
+                      "Mäntyharju"  ="#CAB2D6", 
+                      "Marttila"  ="#FDBF6F",
+                      "Miehikkälä"  ="gray80",
+                      "Mikkeli"  ="khaki2", 
+                      "Multia"  ="maroon", 
+                      "Muurame"  ="orchid1", 
+                      "Orivesi"  ="deeppink1",
+                      "Pälkäne"  ="blue1", 
+                      "Petäjävesi"  ="steelblue4", 
+                      "Pieksänmaa"  ="darkturquoise", 
+                      "Punkaharju"  ="green1",  
+                      "Punkalaidun"  ="yellow4", 
+                      "Puumala"  ="yellow3", 
+                      "Rautalampi"  ="darkorange4", 
+                      "Savonlinna"  ="brown",
+                      "Somero" ="grey40")
+
+# Check if all treatments in pca_scores$treatment have corresponding colors
+missing_colors <- setdiff(levels(pca_scores$treatment), names(treatment_colors))
+if (length(missing_colors) > 0) {
+  stop("The following treatments are missing colors: ", paste(missing_colors, collapse = ", "))
+}
+
+# Create a ggplot PCA plot with different colors for each treatment
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4g.tiff",width=8,height=8,units="in",res=300)
+ggplot(pca_scores, aes(x = PC1, y = PC2, color = treatment)) +
+  geom_point(size = 2) +
+  coord_equal() + ggtitle("g)") + theme_light() + 
+  xlim(-100, 800) +  # Set x-axis limits
+  ylim(-750, 350) +  # Set y-axis limits
+  labs(#title = "c)",
+    x = paste("PC1 (", round(pca_result$sdev[1]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = ""),
+    y = paste("PC2 (", round(pca_result$sdev[2]^2 / sum(pca_result$sdev^2) * 100, 2), "%)", sep = "")) +
+  scale_color_manual(name = "Location", values = treatment_colors) +
+  theme(axis.title = element_text(size = 15),
+        axis.text=element_text(size=15),  
+        plot.title = element_text(size=20),
+        #legend.title=element_text(size=15), 
+        #legend.text=element_text(size=12),
+        legend.position = "none")
+dev.off()
+
+library(ggdendro)
+# Assuming cpg.clones.MthBase is your methylBaseDB object
+hc <- clusterSamples(chh.unrel.MthBase, dist="correlation", method="ward.D2")
+dend <- as.dendrogram(hc)
+
+# Convert the dendrogram to a data frame
+dend_data <- dendro_data(dend)
+
+# Get the original sample names
+original_labels <- labels(dend)
+
+# Create a data frame for labels with custom colors
+label_df <- data.frame(label = original_labels,
+                       family = new_treatment_names[as.character(chh.unrel.MthBase@treatment[match(original_labels, chh.unrel.MthBase@sample.ids)])],
+                       stringsAsFactors = FALSE)
+
+# Merge the label data frame with the dendrogram data
+dend_data$labels <- merge(dend_data$labels, label_df, by.x = "label", by.y = "label")
+
+# Plot the customized dendrogram using ggplot2
+tiff(file="/home/uni01/UFFF/chano/TGC/PUBLICATION/supp.figure.4h.tiff",width=20,height=8,units="in",res=300)
+ggplot() +
+  geom_segment(data = dend_data$segments, aes(x = x, y = y, xend = xend, yend = yend)) +
+  geom_point(data = dend_data$labels, aes(x = x, y = y, color = family), size = 1.5) +
+  scale_color_manual(values = treatment_colors, name = "Location") +
+  theme_minimal() +
+  labs(title = "h)",
+       x = "Samples",
+       y = "Height") +
+  theme(plot.title = element_text(size=20),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
+        axis.line.y = element_line(color = "black"),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.title = element_text(size = 15),
+        legend.text = element_text(size = 12))
+dev.off()
+
+                                                  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                  
